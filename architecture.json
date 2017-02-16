@@ -1,6 +1,5 @@
 {
 	"hwc": [28, 28, 1],
-	"center": 0,
 	"z_dim": 32,
 	"y_dim": 10,
 	"encoder": {
@@ -24,15 +23,16 @@
 		"l2-reg": 1e-6
 	},
 	"training": {
-		"batch_size": 100,
 		"epoch": 301,
 		"lr": 1e-4,
 		"beta1": 0.5,
-		"halflife": 10,
+		"halflife": 5,
 		"largest_tau": 1.0,
 		"smallest_tau": 0.5,
 		"alpha": 100.0,
 		"summary_freq": 5,
+		"batch_size": 100,
+		"smp_per_class": 10,
 		"num_unlabeled": 50000
 	}
 }

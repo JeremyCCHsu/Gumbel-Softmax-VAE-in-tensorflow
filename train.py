@@ -10,18 +10,19 @@ import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 
-from model.gvae import VCGAN
+from model.cvae import CVAE
 from util.wrapper import save
 
 args = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string('logdir', 'tmp', 'log dir')
 tf.app.flags.DEFINE_string('datadir', 'dataset', 'dir to dataset')
+tf.app.flags.DEFINE_string('gpu_cfg', None, 'GPU config file')
 # tf.app.flags.DEFINE_integer('epoch', 0, 'num of epochs')
 
 class MNISTLoader(object):
     '''
     I assume that 'download' and 'unzip' was done outside
-    
+
     Training set: 60k
     Test set: 10k
 
@@ -31,24 +32,23 @@ class MNISTLoader(object):
         t: test
     '''
     def __init__(self, path):
-             
         self.x_l = self.load_images(
-            os.path.join(path, 'train-images-idx3-ubyte'),
-            60000)
+            filename=os.path.join(path, 'train-images-idx3-ubyte'),
+            N=60000)
         self.y_l = self.load_labels(
-            os.path.join(path, 'train-labels-idx1-ubyte'),
-            60000)
+            filename=os.path.join(path, 'train-labels-idx1-ubyte'),
+            N=60000)
         self.x_t = self.load_images(
-            os.path.join(path, 't10k-images-idx3-ubyte'),
-            10000)
+            filename=os.path.join(path, 't10k-images-idx3-ubyte'),
+            N=10000)
         self.y_t = self.load_labels(
-            os.path.join(path, 't10k-labels-idx1-ubyte'),
-            10000)
+            filename=os.path.join(path, 't10k-labels-idx1-ubyte'),
+            N=10000)
         self.x_u = None
         self.y_u = None  # [TODO] actually shouldn't exist
 
     def load_images(self, filename, N):
-        ''' 
+        '''
         Load MNIST from the downloaded and unzipped file
         into [N, 28, 28, 1] dimensions with [0, 1] values
         '''
@@ -57,7 +57,7 @@ class MNISTLoader(object):
         x = x[16:].reshape([N, 28, 28, 1]).astype(np.float32)
         x = x / 255.
         return x
-    
+
     def load_labels(self, filename, N):
         ''' `int` '''
         with open(filename) as f:
@@ -65,12 +65,15 @@ class MNISTLoader(object):
         x = x[8:].reshape([N]).astype(np.int32)
         return x
 
-    # Ad-hoc: for SSL only    
+    # ==== Ad-hoc: the following are for SSL only ====
     def divide_semisupervised(self, N_u):
         '''
-        Divides the dataset into two parts
-        Always choose the last N_u samples as labeled data
-        '''       
+        Shuffle before splitting
+        '''
+        idx = np.arange(self.y_l.shape[0])
+        self.x_l = self.x_l[idx]
+        self.y_l = self.y_l[idx]
+
         self.x_u = self.x_l[:N_u]
         self.y_u = self.y_l[:N_u]
 
@@ -93,9 +96,10 @@ class MNISTLoader(object):
                     index_.append(j)
                     count += 1
             index = index + index_
-        x_s = x[index]
-        y_s = y[index]
-        return x_s, y_s
+        # x_s = x[index]
+        # y_s = y[index]
+        return x[index], y[index]
+    # =======================================
 
 
 def get_optimization_ops(loss, arch):
@@ -103,38 +107,18 @@ def get_optimization_ops(loss, arch):
     optimizer_g = tf.train.RMSPropOptimizer(
         arch['training']['lr'])
 
-    trainables = tf.trainable_variables()
-    trainables = [v for v in trainables if 'Tau' not in v.name]
-
     a = arch['training']['alpha']
 
     obj_Ez = loss['KL(z)'] + loss['Dis'] - loss['H(y)'] + a * loss['Labeled']  # + a * loss['H(y)']
 
+    trainables = tf.trainable_variables()
+    trainables = [v for v in trainables if 'Tau' not in v.name]
     opt_g = optimizer_g.minimize(
         obj_Ez,
         var_list=trainables)
 
     return dict(g=opt_g)
 
-
-# def pick_supervised_samples(x, y, smp_per_class=10):
-#     idx = np.arange(y.shape[0])
-#     np.random.shuffle(idx)
-#     x = x[idx]
-#     y = y[idx]
-#     # pdb.set_trace()
-#     x_s, y_s = list(), list()
-#     for i in range(10):
-#         count = 0
-#         idx = list()
-#         for j in range(y.shape[0]):
-#             if y[j] == i and count < smp_per_class:
-#                 idx.append(j)
-#                 count += 1
-#         y_s = y_s + idx
-#     x_s = x[y_s]
-#     y_s = y[y_s]
-#     return x_s, y_s
 
 def halflife(t, N0=1., T_half=1., thresh=0.0):
     l = np.log(2.) / T_half
@@ -193,11 +177,11 @@ def main():
 
     dataset = MNISTLoader(args.datadir)
     dataset.divide_semisupervised(N_u=arch['training']['num_unlabeled'])
-    x_s, y_s = dataset.pick_supervised_samples(smp_per_class=10)
-    x_u, y_u = dataset.x_u, dataset.y_u
+    x_s, y_s = dataset.pick_supervised_samples(
+        smp_per_class=arch['training']['smp_per_class'])
+    x_u = dataset.x_u
     x_t, y_t = dataset.x_t, dataset.y_t
-    x_1, y_1 = dataset.pick_supervised_samples(smp_per_class=1)
-
+    x_1, _ = dataset.pick_supervised_samples(smp_per_class=1)
 
     x_l_show = reshape(x_s, 10)
     imshow([x_l_show], os.path.join(args.logdir, 'x_labeled.png'))
@@ -205,16 +189,15 @@ def main():
     batch_size = arch['training']['batch_size']
     N_EPOCH = arch['training']['epoch']
     N_ITER = x_u.shape[0] // batch_size
-    # pdb.set_trace()
     N_HALFLIFE = arch['training']['halflife']
+
 
     h, w, c = arch['hwc']
     X_u = tf.placeholder(shape=[None, h, w, c], dtype=tf.float32)
-
     X_l = tf.constant(x_s)
     Y_l = tf.one_hot(y_s, arch['y_dim'])
 
-    net = VCGAN(arch)
+    net = CVAE(arch)
     loss = net.loss(X_u, X_l, Y_l)
 
     encodings = net.encode(X_u)
@@ -230,13 +213,31 @@ def main():
 
     opt = get_optimization_ops(loss, arch=arch)
 
+
+    if args.gpu_cfg:
+        with open(args.gpu_cfg) as f:
+            cfg = json.load(f)
+        gpu_options = tf.GPUOptions(
+            per_process_gpu_memory_fraction=cfg['per_process_gpu_memory_fraction'])
+        session_conf = tf.ConfigProto(
+            allow_soft_placement=cfg['allow_soft_placement'],
+            log_device_placement=cfg['log_device_placement'],
+            inter_op_parallelism_threads=cfg['inter_op_parallelism_threads'],
+            intra_op_parallelism_threads=cfg['intra_op_parallelism_threads'],
+            gpu_options=gpu_options)
+        sess = tf.Session(
+            config=session_conf)
+    else:
+        sess = tf.Session()
+
     sess = tf.Session()
     init = tf.global_variables_initializer()
     sess.run(init)
 
-    # writer = tf.train.SummaryWriter(args.logdir)
-    # writer.add_graph(tf.get_default_graph())
-    # summary_op = tf.merge_all_summaries()
+
+    writer = tf.train.SummaryWriter(args.logdir)
+    writer.add_graph(tf.get_default_graph())
+    summary_op = tf.merge_all_summaries()
     saver = tf.train.Saver()
 
     # ===============================
@@ -279,8 +280,8 @@ def main():
                 print(msg)
 
                 if it == (N_ITER -1):
-                    b, y, xh, xh2 = sess.run(
-                        [X_u, Y_u, Xh, Xh2],
+                    b, y, xh, xh2, summary = sess.run(
+                        [X_u, Y_u, Xh, Xh2, summary_op],
                         {X_u: batch,
                          net.tau: tau})
 
@@ -310,7 +311,9 @@ def main():
                                 'Reconstructed using dense label',
                                 'Reconstructed using onehot label'])
 
-                # Periodic checkout
+                    writer.add_summary(summary, step)
+
+                # Periodic evaluation
                 if it == (N_ITER - N_ITER) and ep % arch['training']['summary_freq'] == 0:
                     # ==== Classification ====
                     y_p = list()
@@ -327,13 +330,12 @@ def main():
                     y_p = np.concatenate(y_p, 0)
 
                     # ==== Style Conversion ====
-                    y_u = np.eye(arch['y_dim'])
-                    tn = sess.run(
+                    x_converted = sess.run(
                         thumbnail,
-                        {Y_u: y_u, X_u: x_1})
+                        {X_u: x_1, Y_u: np.eye(arch['y_dim'])})
 
                     imshow(
-                        img_list=[tn],
+                        img_list=[x_converted],
                         filename=os.path.join(
                             args.logdir,
                             'Ep-{:03d}-conv.png'.format(ep)))
