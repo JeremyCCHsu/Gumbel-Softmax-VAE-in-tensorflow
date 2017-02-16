@@ -1,0 +1,14 @@
+*.pyc
+old_*/*
+./*.png
+./*.jpg
+sprite*
+./test*
+test.png
+data/
+logdir/
+*.tar.gz
+./*.pyc
+output/
+tmp*/
+
