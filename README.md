@@ -1,4 +1,5 @@
 # Categorical VAE (using Gumbel-Softmax approximation) in Tensorflow
+
 Implementation (with modifications) of [*Categorical Reparameterization 
 with Gumbel-Softmax*](https://arxiv.org/abs/1611.01144)  
 Modifications:
@@ -12,7 +13,7 @@ Modifications:
 
 ## Semi-supervised learning for MNIST dataset
 Classification results on the test set
-Error rate: ~ 3 - 4%  
+Error rate: ~ 3 - 5%  
 Confusion matrix:  
 
 |       |   0|   1|   2|  3|   4|   5|   6|   7|   8|   9|
@@ -31,19 +32,20 @@ Confusion matrix:
 <br/>
 
 
-### 100 labeled images
-<img src="imgs/x_labeled.png" />  
+### 100 labeled images (Training set)
+<img src="imgs/x_labeled.png" width=400 />  
 Ten images per class.  
 <br/>
 <br/>
 
-### Style Change
-<img src="imgs/Ep-200-conv.png" />  
+### Style Change (Testing set)
+<img src="imgs/Ep-200-conv.png" width=400 />  
 Row: same style across 10 classes.  
+Style is obtained from the diagonal image.
 <br/>
 <br/>
 
-### Reconstruction
+### Reconstruction (Testing set)
 <img src="imgs/Ep-200-reconst.png" />  
 Reconstruction using the inferred class label.  
  - Left: Input (Ground-truth)
@@ -62,12 +64,27 @@ Reconstruction using the inferred class label.
 - Json
 
 <br/>
-<br/>
 
 ### Usage
 Git clone this repo.  
 Download and unzip MNIST to a sub-folder `dataset`  
-Specify your configurations in `architecture.json`, and execute  
+Specify your configurations in `architecture.json`, and execute `python train.py`  
+<br/>
+Or equivalently, run the following script.  
 ```bash
+git clone https://github.com/JeremyCCHsu/Gumbel-Softmax-VAE-in-tensorflow.git
+cd Gumbel-Softmax-VAE-in-tensorflow
+mkdir dataset
+cd dataset
+curl http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz -o train-images-idx3-ubyte.gz
+gzip -d train-images-idx3-ubyte.gz
+curl http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz -o train-labels-idx1-ubyte.gz
+gzip -d train-labels-idx1-ubyte.gz
+curl http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz -o t10k-images-idx3-ubyte.gz
+gzip -d t10k-images-idx3-ubyte.gz
+curl http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz -o t10k-labels-idx1-ubyte.gz
+gzip -d t10k-labels-idx1-ubyte.gz
+cd ..
 python train.py
 ```
+

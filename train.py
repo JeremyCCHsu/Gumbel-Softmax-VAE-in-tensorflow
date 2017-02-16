@@ -190,7 +190,7 @@ def main():
         arch = json.load(f)
 
     dataset = MNISTLoader(args.datadir)
-    dataset.divide_semisupervised(N_u=args['training']['num_labeled'])
+    dataset.divide_semisupervised(N_u=args['training']['num_unlabeled'])
     x_s, y_s = dataset.pick_supervised_samples(smp_per_class=10)
     x_u, y_u = dataset.x_u, dataset.y_u
     x_t, y_t = dataset.x_t, dataset.y_t
