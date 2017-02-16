@@ -154,7 +154,7 @@ def make_thumbnail(y, z, arch, net):
 
 def imshow(img_list, filename, titles=None):
     n = len(img_list)
-    plt.figure()
+    plt.figure(figsize=(10*n, 10))
     for i in range(n):
         plt.subplot(1, n, i + 1)
         plt.imshow(img_list[i], cmap='gray')

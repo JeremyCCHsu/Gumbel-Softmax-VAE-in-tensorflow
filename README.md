@@ -6,6 +6,9 @@ Modifications:
   1. Batch Norm
   2. ConvNet specifications
   3. alpha value
+  4. temperature: 
+  	Eric: tau = max(0.5, exp(-r*t)), t is step, r = {1e-5, 1e-4}
+  	Mine: tau = tau0 + (1 - tau0) exp(-r*t), t is epoch, r ~ 2.7e-4
   4. (more?)
 
 <br/>
@@ -13,7 +16,7 @@ Modifications:
 
 ## Semi-supervised learning for MNIST dataset
 Classification results on the test set
-Error rate: ~ 3 - 5%  
+Error rate: ~ 3 - 8% (depending on the configs)  
 Confusion matrix:  
 
 |       |   0|   1|   2|  3|   4|   5|   6|   7|   8|   9|

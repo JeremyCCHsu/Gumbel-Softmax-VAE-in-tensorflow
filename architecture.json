@@ -26,7 +26,7 @@
 		"epoch": 301,
 		"lr": 1e-4,
 		"beta1": 0.5,
-		"halflife": 5,
+		"halflife": 10,
 		"largest_tau": 1.0,
 		"smallest_tau": 0.5,
 		"alpha": 100.0,
