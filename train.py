@@ -20,6 +20,8 @@ tf.app.flags.DEFINE_string('datadir', 'dataset', 'dir to dataset')
 
 class MNISTLoader(object):
     '''
+    I assume that 'download' and 'unzip' was done outside
+    
     Training set: 60k
     Test set: 10k
 
@@ -186,11 +188,11 @@ def main():
     if not os.path.isdir(args.logdir):
         os.mkdir(args.logdir)
 
-    with open('architecture-g.json') as f:
+    with open('architecture.json') as f:
         arch = json.load(f)
 
     dataset = MNISTLoader(args.datadir)
-    dataset.divide_semisupervised(N_u=args['training']['num_unlabeled'])
+    dataset.divide_semisupervised(N_u=arch['training']['num_unlabeled'])
     x_s, y_s = dataset.pick_supervised_samples(smp_per_class=10)
     x_u, y_u = dataset.x_u, dataset.y_u
     x_t, y_t = dataset.x_t, dataset.y_t
