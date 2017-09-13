@@ -140,7 +140,7 @@ class CVAE(object):
             activation_fn=tf.nn.sigmoid)
         y2x = tf.reshape(y2x, [-1, h, w, c])
 
-        x = tf.concat(3, [x, y2x])
+        x = tf.concat([x, y2x], 3)
 
         with slim.arg_scope(
             [slim.batch_norm],
@@ -369,7 +369,7 @@ class CVAE(object):
                     tf.reduce_sum(
                         tf.nn.sigmoid_cross_entropy_with_logits(
                             logits=slim.flatten(labeled['xh_sig_logit']),
-                            targets=slim.flatten(x_l)),
+                            labels=slim.flatten(x_l)),
                         1))
 
                 loss['Labeled'] = tf.reduce_mean(
@@ -390,7 +390,7 @@ class CVAE(object):
                     tf.reduce_sum(
                         tf.nn.sigmoid_cross_entropy_with_logits(
                             logits=slim.flatten(unlabel['xh_sig_logit']),
-                            targets=slim.flatten(x_u)),
+                            labels=slim.flatten(x_u)),
                         1))
 
                 y_prior = tf.ones_like(unlabel['y_sample']) / self.arch['y_dim']
@@ -408,9 +408,9 @@ class CVAE(object):
                 #    to subtract `log p` before `mul` p
                 loss['H(y)'] = tf.reduce_mean(                
                     tf.reduce_sum(
-                        tf.mul(
-                            unlabel['y_sample'],
-                            tf.log(unlabel['y_sample'] + EPS) - tf.log(y_prior)),
+                        tf.multiply(
+                            unlabel['y_pred'],
+                            tf.log(unlabel['y_pred'] + EPS) - tf.log(y_prior)),
                         -1))
 
 

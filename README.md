@@ -1,18 +1,17 @@
 # Categorical VAE (using Gumbel-Softmax approximation) in Tensorflow
-
-Implementation (with modifications) of [*Categorical Reparameterization 
+(Adapted version) Semi-supervised learning part of the [*Categorical Reparameterization 
 with Gumbel-Softmax*](https://arxiv.org/abs/1611.01144)  
-Modifications:
+Modifications are list as follows:
   1. Batch Norm
   2. ConvNet specifications
   3. alpha value
   4. temperature:  
-  	Eric: tau = max(0.5, exp(-r\*t)), t is step, r = {1e-5, 1e-4}  
+  	Eric's: tau = max(0.5, exp(-r\*t)), t is step, r = {1e-5, 1e-4}  
   	Mine: tau = tau0 + (1 - tau0) exp(-r*t), t is epoch, r ~ 2.7e-4  
   4. (more?)
+<br/>
+<br/>
 
-<br/>
-<br/>
 
 ## Semi-supervised learning for MNIST dataset
 Classification results on the test set
@@ -30,7 +29,7 @@ Confusion matrix:
 | **6** |   3|   1|   1|  0|   2|   7| 923|   0|  21|   0|
 | **7** |   0|   0|   7|  1|   1|   0|   0| 997|   3|  19|
 | **8** |   3|   0|   2|  4|   0|   2|   2|   3| 950|   8|
-| **9** |   2|   2|   1|  8|   1|   3|   1|   5|  12| 974|
+| **9** |   2|   2|   1|  8|   1|   3|   1|   5|  12| 974|  
 Accuracy: 9671/10000 = **96.71%**
 <br/>
 <br/>
@@ -70,12 +69,8 @@ Reconstruction using the inferred class label.
 <br/>
 
 ### Usage
-Git clone this repo.  
-Download and unzip MNIST to a sub-folder `dataset`  
-Specify your configurations in `architecture.json`, and execute `python train.py`  
-<br/>
-Or equivalently, run the following script.  
 ```bash
+pip install -r requirements.txt
 git clone https://github.com/JeremyCCHsu/Gumbel-Softmax-VAE-in-tensorflow.git
 cd Gumbel-Softmax-VAE-in-tensorflow
 mkdir dataset
@@ -90,4 +85,10 @@ curl http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz -o t10k-labels-i
 gzip -d t10k-labels-idx1-ubyte.gz
 cd ..
 python train.py
-```
+```  
+The outputs will be in `./tmp`  
+
+Or equivalently, `git clone` this repo.  
+Download and unzip MNIST to a sub-folder `dataset`  
+Specify your configurations in `architecture.json`, and execute `python train.py`  
+<br/>

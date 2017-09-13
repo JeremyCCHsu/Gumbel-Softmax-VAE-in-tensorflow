@@ -225,19 +225,21 @@ def main():
             inter_op_parallelism_threads=cfg['inter_op_parallelism_threads'],
             intra_op_parallelism_threads=cfg['intra_op_parallelism_threads'],
             gpu_options=gpu_options)
-        sess = tf.Session(
-            config=session_conf)
+        sess = tf.Session(config=session_conf)
     else:
-        sess = tf.Session()
-
-    sess = tf.Session()
+        sess_config = tf.ConfigProto(
+            allow_soft_placement=True,
+            gpu_options=tf.GPUOptions(allow_growth=True))
+        sess = tf.Session(config=sess_config)
+            
+    # sess = tf.Session()
     init = tf.global_variables_initializer()
     sess.run(init)
 
 
-    writer = tf.train.SummaryWriter(args.logdir)
-    writer.add_graph(tf.get_default_graph())
-    summary_op = tf.merge_all_summaries()
+    # writer = tf.train.SummaryWriter(args.logdir)  # TODO
+    # writer.add_graph(tf.get_default_graph())  # TODO
+    # summary_op = tf.merge_all_summaries()  # TODO
     saver = tf.train.Saver()
 
     # ===============================
@@ -280,8 +282,10 @@ def main():
                 print(msg)
 
                 if it == (N_ITER -1):
-                    b, y, xh, xh2, summary = sess.run(
-                        [X_u, Y_u, Xh, Xh2, summary_op],
+                    # b, y, xh, xh2, summary = sess.run(    # TODO
+                    #     [X_u, Y_u, Xh, Xh2, summary_op],  # TODO
+                    b, y, xh, xh2 = sess.run(
+                        [X_u, Y_u, Xh, Xh2],
                         {X_u: batch,
                          net.tau: tau})
 
@@ -311,7 +315,7 @@ def main():
                                 'Reconstructed using dense label',
                                 'Reconstructed using onehot label'])
 
-                    writer.add_summary(summary, step)
+                    # writer.add_summary(summary, step)  # TODO
 
                 # Periodic evaluation
                 if it == (N_ITER - N_ITER) and ep % arch['training']['summary_freq'] == 0:
