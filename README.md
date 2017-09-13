@@ -30,6 +30,7 @@ Confusion matrix:
 | **7** |   0|   0|   7|  1|   1|   0|   0| 997|   3|  19|
 | **8** |   3|   0|   2|  4|   0|   2|   2|   3| 950|   8|
 | **9** |   2|   2|   1|  8|   1|   3|   1|   5|  12| 974|  
+
 Accuracy: 9671/10000 = **96.71%**
 <br/>
 <br/>
@@ -60,7 +61,7 @@ Reconstruction using the inferred class label.
 ### Environment and Dependency
 - Linux Ubuntu 16.04
 - Python 3.5
-- Tensorflow 0.12
+- Tensorflow 1.3  (before 2017-0912, it was compatible to 0.12)
 - Matplotlib
 - sklearn
 - Numpy
